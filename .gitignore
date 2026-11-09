@@ -1,0 +1,21 @@
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+*.db
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+models/*
+!models/.gitkeep
+# never commit real packet captures or credentials
+*.pcap
+*.pcapng
+
+data/samples/synthetic_*.csv
+!data/raw/*.md5
+!data/raw/*.md5.reference
