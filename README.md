@@ -1,14 +1,11 @@
+
 # Python-Based Threat Intelligence and Network Anomaly Detection
 
-A defensive security research prototype that fuses **three independent evidence sources** into one explainable
-risk score, with alerting, a REST API and a dashboard.
+A defensive security research prototype that fuses **three independent evidence sources** into one explainable risk score, with alerting, a REST API and a dashboard.
 
-> **Scope:** a research prototype, not a SIEM or autonomous malware detector. An anomaly is a lead for
-> investigation, not proof of an attack.
+> **Scope:** a research prototype, not a SIEM or autonomous malware detector. An anomaly is a lead for investigation, not proof of an attack.
 >
-> **Real-world validation status: NOT YET DONE.** All numbers in this README come from a synthetic generator written
-> by the same author as the detector. They validate that the pipeline works; they do **not** show it detects real
-> attacks. The CIC-IDS2017 protocol and tooling are ready (`docs/CICIDS2017_EXPERIMENT.md`); the run itself is the next milestone.
+> **Real-world validation status: NOT YET DONE.** All numbers in this README come from a synthetic generator written by the same author as the detector. They validate that the pipeline works; they do **not** show it detects real attacks. The CIC-IDS2017 protocol and tooling are ready (`docs/CICIDS2017_EXPERIMENT.md`); the run itself is the next milestone.
 
 ## The three evidence sources (be able to explain this without the code)
 
@@ -32,7 +29,7 @@ They fail in *different* ways, which is why combining them helps, and each alert
 python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 python main.py demo               # synthetic: generate -> ingest feed -> evaluate -> detect on unseen unlabelled flows
 python -m pytest -q
-python main.py evaluate --flows data/raw/*.csv --db data/cic_eval.db       # real data, see docs/
+# For the historical CIC-IDS2017 benchmark, use --no-ioc and follow the PowerShell steps in docs/CICIDS2017_EXPERIMENT.md
 python main.py detect --flows new.csv [--context earlier.csv] [--bundle models/bundle-...]
 python scripts/verify_checksums.py data/raw/GeneratedLabelledFlows.md5 --dir data/raw
 python scripts/verify_live_feeds.py        # YOU run this with real keys (see below)
@@ -50,8 +47,7 @@ URLhaus / OTX -> hardened collectors -> IOC store (with last_seen / expiry) -> f
 
 ## Risk scoring
 
-Default: weights **learned on a held-out validation split** (logistic regression over anomaly strength, IOC confidence,
-rules fired), `risk = 100 x P(malicious)`; alert threshold = lowest score keeping validation FPR <= 1%. Nothing is fitted on test.
+Default: weights **learned on a held-out validation split** (logistic regression over anomaly strength, IOC confidence, rules fired), `risk = 100 x P(malicious)`; alert threshold = lowest score keeping validation FPR <= 1%. Nothing is fitted on test.
 The original hand-set weights `{0.50, 0.55, 0.20}` (sum 1.25, intentionally: any one strong channel can alert, agreement
 saturates at 100) remain as an **uncalibrated prior**, used as a fallback and as an ablation baseline. If validation has
 < 5 IOC hits, the IOC weight cannot be learned and the method becomes `calibrated_partial` (flagged in the bundle). Learned
@@ -98,7 +94,7 @@ not a malicious bundle; load only bundles you trust.
 Implemented and tested on synthetic and CIC-layout fixtures: temporal split with embargo; leakage report and exclusion of cross-split duplicates from metrics; per-attack
 recall with support; unseen-attack-type test; cross-day option; memory-safe loading (only needed columns); window-preserving benign subsampling with prevalence-corrected
 precision; Random Forest row cap; multi-seed support; provenance (command line, input SHA-256, library versions) in every `results.json`; CIC 12-hour-timestamp repair
-detected per day. Step by step: **`docs/CICIDS2017_EXPERIMENT.md`** (includes the checksum for your `GeneratedLabelledFlows.zip` and a blank results template).
+detected per day. Step by step: **`docs/CICIDS2017_EXPERIMENT.md`** (includes the checksum verification steps, a historical-IOC exclusion mode, a PowerShell cross-day evaluation command, and a blank results template). The real CIC-IDS2017 benchmark remains NOT RUN until the dataset is downloaded and evaluated locally.
 
 ## Results: synthetic data, seed 42 (pipeline validation only, NOT detection performance)
 
@@ -130,8 +126,8 @@ Honest reading:
   expired/stale/undated indicators and DB migration, malformed API responses (garbage parser input, 401/429/5xx/timeouts/redirects/oversize, hostile pagination), corrupted bundles (missing/garbled
   manifest, structurally invalid fields, valid-checksum-but-unpicklable model, bad reference scores, tampering), duplicate alerts (re-runs, duplicate flows), unexpected values (extreme/NaN/inf/negative, single-row and empty
   batches), batch/window consistency, CIC-format loading, and checksum verification. One of these tests found a real bug (ragged CSV rows were silently accepted when selecting columns); it is fixed.
-- **How they were run:** 81 test cases passed in an offline sandbox where pytest could not be installed, via a small stand-in runner that approximates pytest. **Run `python -m pytest -q` yourself**;
-  `.github/workflows/ci.yml` runs it and the end-to-end demo on Python 3.10 and 3.12.
+- **Verification in the final project build:** `python -m pytest -q -rs` → **80 passed, 1 skipped**. The skipped API test requires Flask, which was not installed in the isolated verification environment; Flask is declared in `requirements.txt`. Install the full requirements and rerun the suite to execute it. `.github/workflows/ci.yml` runs the test suite and end-to-end demo on Python 3.10 and 3.12.
+- **End-to-end smoke test:** `python main.py demo` completed successfully: 21,200 labelled synthetic flows for training/evaluation, then 5,300 unlabelled synthetic flows for detection; 324 alerts were stored. The measured synthetic hybrid F1 was 0.824 in this run. This is a software-pipeline check only, not evidence of real-world detection accuracy.
 - **Not verified:** live URLhaus/OTX responses (see above), the Streamlit dashboard in a browser (it compiles; not run), and everything on real CIC-IDS2017 data.
 
 ## Limitations
