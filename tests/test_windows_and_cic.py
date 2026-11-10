@@ -1,9 +1,9 @@
 """Time-window consistency (weakness C) and CIC-IDS-layout handling (weakness A tooling)."""
 import json
 
-import numpy as np
-import pandas as pd
-import pytest
+import numpy as np  # type: ignore[import-not-found]
+import pandas as pd  # type: ignore[import-not-found]
+import pytest  # type: ignore[import-not-found]
 
 import main
 from detection.feature_engineering import add_window_aggregates, aggregate_mode
