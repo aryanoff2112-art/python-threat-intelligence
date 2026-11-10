@@ -77,6 +77,18 @@ def test_temporal_split_never_lets_a_window_straddle_the_cut():
     assert not (w(tr) & w(te))
 
 
+
+def test_evaluation_rejects_non_chronological_splits():
+    from detection.evaluation import run_experiment
+    flows, iocs = generate(n_benign=4000, seed=19)
+    tr, va, te = split_three_way(flows, "10min")
+    # Inject a future row into training: this used to be reported as a diagnostic only.
+    bad_train = pd.concat([tr, te.tail(1)], ignore_index=True)
+    with pytest.raises(ValueError, match="Chronological split violation|not strictly ordered"):
+        run_experiment(matcher=IOCMatcher(iocs.assign(first_seen=None)),
+                       splits=(bad_train, va, te), seed=19)
+
+
 # ------------------------------------------------------------------- CIC-IDS layout
 def _write_cic_layout(flows, path):
     """Re-express synthetic flows in the real CIC-IDS2017 'GeneratedLabelledFlows' layout: padded
@@ -140,12 +152,14 @@ def test_evaluate_on_cic_layout_end_to_end_with_subsampling(tmp_path):
     _write_cic_layout(flows, tmp_path / "Day.csv")
     dbp, mdir, rdir = str(tmp_path / "t.db"), str(tmp_path / "m"), str(tmp_path / "r")
     main.main(["evaluate", "--flows", str(tmp_path / "Day.csv"), "--db", dbp, "--models-dir", mdir, "--results-dir", rdir,
-               "--benign-window-frac", "0.6", "--rf-max-rows", "4000"])
+               "--benign-window-frac", "0.6", "--rf-max-rows", "4000", "--no-ioc"])
     res = json.loads((tmp_path / "r" / "results.json").read_text())
     assert res["sampling"]["benign_row_fraction"] < 1 and res["sampling"]["rf_max_train_rows"] == 4000
     rf = res["models"]["Random Forest (supervised baseline)"]
     assert rf["precision_at_original_prevalence"] <= rf["precision"] + 1e-9
     assert res["dataset"]["split"] == "temporal+embargo"
+    assert res["reproducibility"]["ioc_matching_enabled"] is False
+    assert res["dataset"]["iocs_loaded"] == 0
 
 
 # ------------------------------------------------------------------- checksum verification
