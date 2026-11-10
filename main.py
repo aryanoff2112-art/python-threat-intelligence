@@ -110,8 +110,12 @@ def cmd_evaluate(args):
         note = (f"benign time-windows subsampled to ~{frac:.1%} of benign rows (all attack windows kept); "
                 "raw precision is inflated, use precision_at_original_prevalence")
         print("NOTE:", note)
-    conn, matcher = _matcher(args.db)
-    print(f"{len(matcher):,} indicators loaded for IOC matching {matcher.stats}")
+    if getattr(args, "no_ioc", False):
+        matcher = IOCMatcher()
+        print("IOC matching disabled for this evaluation (historical dataset / no temporally valid IOC source).")
+    else:
+        conn, matcher = _matcher(args.db)
+        print(f"{len(matcher):,} indicators loaded for IOC matching {matcher.stats}")
     try:
         results, _, pipe = run_experiment(df, matcher, strict_dedup=not args.keep_duplicates, embargo=args.embargo,
                                           splits=splits, rf_max_rows=args.rf_max_rows, seed=args.seed,
@@ -122,7 +126,8 @@ def cmd_evaluate(args):
         "command": "python main.py " + " ".join(sys.argv[1:]), "environment": _environment(),
         "inputs": _provenance((args.train or []) + (args.test or []) + (args.flows or [str(FLOWS_SAMPLE)])),
         "embargo": args.embargo, "strict_dedup": not args.keep_duplicates, "random_state": args.seed,
-        "benign_window_frac": args.benign_window_frac, "rf_max_rows": args.rf_max_rows}
+        "benign_window_frac": args.benign_window_frac, "rf_max_rows": args.rf_max_rows,
+        "ioc_matching_enabled": not getattr(args, "no_ioc", False)}
     save_results(results, Path(args.results_dir))
     summary = {"dataset": results["dataset"], "leakage": results["leakage"],
                "headline": {k: {m: v[m] for m in ("precision", "recall", "f1", "false_positive_rate")}
@@ -187,6 +192,8 @@ def main(argv=None):
     e.add_argument("--rf-max-rows", type=int, default=300_000, help="cap rows for the Random Forest baseline")
     e.add_argument("--no-timestamp-fix", action="store_true", help="disable CIC 12-hour-clock detection")
     e.add_argument("--skip-bad-lines", action="store_true")
+    e.add_argument("--no-ioc", action="store_true",
+                   help="disable IOC matching; recommended for historical datasets without time-valid indicators")
     e.add_argument("--seed", type=int, default=42, help="model + subsampling seed; repeat with several seeds to report variance")
     e.add_argument("--results-dir", default=str(DATA_PROCESSED)); e.set_defaults(fn=cmd_evaluate)
     d = sub.add_parser("detect", parents=[common], help="unlabelled traffic: score with a saved bundle")
