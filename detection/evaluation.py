@@ -1,3 +1,4 @@
+
 """Labelled-data experiment (the `evaluate` workflow). Unlabelled traffic goes through `detect`.
 
 Protocol
@@ -107,7 +108,22 @@ def run_experiment(df=None, matcher=None, seed=RANDOM_STATE, strict_dedup=True, 
                              "Use `detect` for unlabelled traffic.")
         if len(part) == 0:
             raise ValueError(f"{name} split is empty; need more data or a smaller --embargo.")
+    # A reported temporal split must actually be chronological. A false diagnostic is
+    # not enough: future information in training/calibration invalidates the evaluation.
+    if all("timestamp" in part.columns for part in (train, val, test)):
+        bounds = [(name, pd.to_datetime(part["timestamp"], errors="coerce"))
+                  for name, part in (("train", train), ("validation", val), ("test", test))]
+        for name, ts in bounds:
+            if ts.isna().any():
+                raise ValueError(f"{name} split contains invalid timestamps; refusing temporal evaluation.")
+        if not (bounds[0][1].max() < bounds[1][1].min()
+                and bounds[1][1].max() < bounds[2][1].min()):
+            raise ValueError("Chronological split violation: require max(train) < min(validation) "
+                             "and max(validation) < min(test). Sort inputs and use a non-overlapping "
+                             "temporal split with an embargo.")
     leak = leakage_report(train, val, test)
+    if "time_order_ok" in leak and not leak["time_order_ok"]:
+        raise ValueError("Leakage diagnostic failed: timestamps are not strictly ordered across splits.")
     if strict_dedup:
         keep_val, keep_test = keep_masks(train, val, test)
     else:
