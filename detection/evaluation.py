@@ -11,11 +11,11 @@ Protocol
 import json
 import time
 
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (average_precision_score, confusion_matrix,
-                             precision_recall_fscore_support, roc_auc_score)
+import numpy as np # type: ignore[import-not-found]
+import pandas as pd  # type: ignore[import-not-found]
+from sklearn.ensemble import RandomForestClassifier # type: ignore[import-not-found]
+from sklearn.metrics import (average_precision_score, confusion_matrix, # type: ignore[import-not-found]
+                             precision_recall_fscore_support, roc_auc_score) 
 
 from config.config import ALERT_MAX_FPR, ALERT_MIN_SCORE, EMBARGO, RANDOM_STATE
 from detection.anomaly_scoring import RiskScorer, select_alert_threshold
