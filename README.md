@@ -3,7 +3,7 @@
 
 A defensive cybersecurity research prototype that combines threat intelligence, behavioural rules, and machine-learning-based anomaly detection to identify suspicious network traffic. Includes IOC collection, risk scoring, alert storage, a REST API, and a Streamlit dashboard.
 
-> **Project status:** Functional prototype. Synthetic evaluation and automated testing completed. Real-world CIC-IDS2017 evaluation and live-feed verification are still pending.
+> **Project status:** Functional prototype. Synthetic evaluation and automated testing completed. Real-world CIC-IDS2017 evaluation and live-feed verification are still pending, and will be added soon.
 >
 > **Important:** All performance metrics currently reported below come from synthetic data. They demonstrate that the software pipeline works, not that the system achieves the same performance on real network traffic.
 
