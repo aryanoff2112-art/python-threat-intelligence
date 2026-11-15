@@ -372,7 +372,7 @@ Some subdirectories and filenames may differ depending on the current repository
 
 ## Disclaimer
 
-This project is developed for defensive cybersecurity research and educational purposes. It is not a replacement for a production SIEM, IDS, or professional security operations workflow. Detection alerts require investigation and validation.
+This project is developed for defensive cybersecurity research and educational and practice purposes. It is not a replacement for a production SIEM, IDS, or professional security operations workflow. Detection alerts require investigation and validation.
 
 ## Author
 
