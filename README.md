@@ -1,4 +1,3 @@
-
 # Python-Based Threat Intelligence and Network Anomaly Detection
 
 A defensive cybersecurity research prototype that combines threat intelligence, behavioural rules, and machine-learning-based anomaly detection to identify suspicious network traffic. Includes IOC collection, risk scoring, alert storage, a REST API, and a Streamlit dashboard.
