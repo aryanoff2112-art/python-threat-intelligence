@@ -22,7 +22,7 @@ A defensive cybersecurity research prototype that combines threat intelligence, 
 
 ## Detection architecture
 
-The system uses three complementary detection signals:
+The system uses three complementary detection signals:-
 
 | Detection method | Purpose | Limitation |
 |---|---|---|
